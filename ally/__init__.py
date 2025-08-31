@@ -1,0 +1,1 @@
+"""Smart diary ally package."""
