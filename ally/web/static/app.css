@@ -1,0 +1,4 @@
+body { font-family: sans-serif; margin: 20px; }
+.container { max-width: 800px; margin: auto; }
+textarea { width: 100%; }
+.reply { background: #eef; padding: 10px; }

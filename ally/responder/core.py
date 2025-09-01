@@ -1,25 +1,45 @@
-from typing import List
+from __future__ import annotations
+
+from typing import Callable, Dict, List
+
+from ally.dialog_strategies import rules, sentiment, static
+from ally.types import Reply, Sentiment
+
+STRATEGY_FACTORIES: Dict[str, Callable[[], object]] = {
+    "static": static.create,
+    "rules": rules.create,
+    "sentiment": sentiment.create,
+}
 
 STYLES = {
-    "gentle": {
-        "question": "Что для тебя сейчас важно?",
-        "step": "Сделай маленький вдох и запиши ещё мысль позже.",
-    },
-    "skeptic": {
-        "question": "Почему это значимо?",
-        "step": "Попробуй посмотреть на ситуацию иначе.",
-    },
-    "poet": {
-        "question": "Как это звучит в твоей душе?",
-        "step": "Найди метафору и сохрани её.",
-    },
+    "gentle": {"step": "сделайте небольшой вдох"},
+    "skeptic": {"step": "какой факт вы упускаете?"},
+    "poet": {"step": "найдите метафору дня"},
 }
 
 
-def respond(threads: List[str], style: str = "gentle") -> str:
-    s = STYLES.get(style, STYLES["gentle"])
-    threads_part = ", ".join(threads)
-    parts = [f"нити: {threads_part}", f"вопрос: {s['question']}"]
-    if step := s.get("step"):
-        parts.append(f"маленький шаг: {step}")
+def format_reply(reply: Reply) -> str:
+    parts: List[str] = []
+    if reply.get("threads"):
+        parts.append("нити: " + ", ".join(reply["threads"]))
+    parts.append(f"вопрос: {reply['question']}")
+    if reply.get("step"):
+        parts.append(f"маленький шаг: {reply['step']}")
     return "\n\n".join(parts)
+
+
+def respond(
+    *,
+    dialog: str,
+    style: str,
+    threads: list[str],
+    sentiment: Sentiment,
+    history: list[dict],
+) -> str:
+    factory = STRATEGY_FACTORIES.get(dialog, static.create)
+    strategy = factory()
+    reply = strategy.ask(threads=threads, sentiment=sentiment, history=history)
+    style_cfg = STYLES.get(style)
+    if style_cfg and "step" not in reply and style_cfg.get("step"):
+        reply["step"] = style_cfg["step"]
+    return format_reply(reply)

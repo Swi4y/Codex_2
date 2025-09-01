@@ -1,65 +1,94 @@
-import argparse
+from __future__ import annotations
+
 import json
+import os
+from pathlib import Path
 
-from .service import (
-    export_entries,
-    init_storage,
-    list_entries,
-    list_threads,
-    pulse,
-    write_entry,
-)
+import click
+from rich.console import Console
+
+from ally.service import core as service
+
+console = Console()
 
 
-def main():
-    parser = argparse.ArgumentParser(prog="ally")
-    parser.add_argument("--path", default="data")
-    parser.add_argument("--log", default="audit.jsonl")
-    sub = parser.add_subparsers(dest="cmd")
+def default_path() -> Path:
+    return Path(os.environ.get("ALLY_DATA_PATH", "data"))
 
-    sub.add_parser("init")
 
-    w = sub.add_parser("write")
-    w.add_argument("text")
-    w.add_argument("--style", default="gentle")
+@click.group()
+@click.option("--path", type=click.Path(), default=str(default_path()))
+@click.pass_context
+def cli(ctx: click.Context, path: str) -> None:
+    """Разговорный дневник CLI."""
+    ctx.obj = {"path": Path(path)}
 
-    l = sub.add_parser("list")
-    l.add_argument("--limit", type=int, default=10)
 
-    sub.add_parser("threads")
-    sub.add_parser("pulse")
+@cli.command()
+@click.pass_obj
+def init(obj: dict) -> None:
+    """Initialize storage."""
+    service.init_storage(obj["path"])
+    console.print("storage initialized", style="green")
 
-    ex = sub.add_parser("export")
-    ex.add_argument("--fmt", choices=["md", "json"], default="md")
-    ex.add_argument("--out", default="export.md")
 
-    args = parser.parse_args()
+@cli.command()
+@click.argument("text")
+@click.option("--dialog", default="static", type=click.Choice(["static", "rules", "sentiment"]))
+@click.option("--style", default="gentle", type=click.Choice(["gentle", "skeptic", "poet"]))
+@click.pass_obj
+def write(obj: dict, text: str, dialog: str, style: str) -> None:
+    """Add a diary entry."""
+    meta, reply = service.create_entry(text=text, dialog=dialog, style=style, path=obj["path"])
+    console.print(reply)
 
-    if args.cmd == "init":
-        init_storage("files", args.path, args.log)
-        print("storage initialized")
-    elif args.cmd == "write":
-        resp = write_entry("files", args.path, args.log, args.text, args.style)
-        print(resp)
-    elif args.cmd == "list":
-        entries = list_entries("files", args.path, args.limit)
-        for e in entries:
-            thread = e["threads"][0] if e["threads"] else ""
-            preview = e["text"][:120].replace("\n", " ")
-            print(f"{e['timestamp']} | {thread} | {preview}")
-    elif args.cmd == "threads":
-        th = list_threads("files", args.path)
-        for t, c in th.items():
-            print(f"{t}: {c}")
-    elif args.cmd == "pulse":
-        data = pulse("files", args.path)
-        print(json.dumps(data, ensure_ascii=False))
-    elif args.cmd == "export":
-        export_entries("files", args.path, args.fmt, args.out, args.log)
-        print(f"exported to {args.out}")
-    else:
-        parser.print_help()
+
+@cli.command(name="list")
+@click.option("--limit", default=10, type=int)
+@click.pass_obj
+def list_entries(obj: dict, limit: int) -> None:
+    entries = service.list_entries(obj["path"], limit)
+    for m in entries:
+        console.print(f"{m['id']} | {m['ts_utc']} | {', '.join(m['threads'])} | {m['sentiment']}")
+
+
+@cli.command()
+@click.pass_obj
+def threads(obj: dict) -> None:
+    data = service.threads(obj["path"])
+    console.print(json.dumps(data, ensure_ascii=False))
+
+
+@cli.command()
+@click.pass_obj
+def pulse(obj: dict) -> None:
+    data = service.pulse(obj["path"])
+    console.print(json.dumps(data, ensure_ascii=False))
+
+
+@cli.command()
+@click.option("--fmt", default="md", type=click.Choice(["md", "json", "html"]))
+@click.option("--out", type=click.Path())
+@click.pass_obj
+def export(obj: dict, fmt: str, out: str | None) -> None:
+    out_path = Path(out) if out else Path(f"export.{fmt}")
+    service.export(fmt, out_path, obj["path"])
+    console.print(f"exported to {out_path}")
+
+
+@cli.command()
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=8000, type=int)
+@click.pass_obj
+def web(obj: dict, host: str, port: int) -> None:
+    """Run web interface."""
+    from ally.web.app import create_app
+
+    app = create_app(obj["path"])
+    import uvicorn
+
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":
-    main()
+    cli()

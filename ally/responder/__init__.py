@@ -1,2 +1,3 @@
-"""Response generation."""
 from .core import respond
+
+__all__ = ["respond"]

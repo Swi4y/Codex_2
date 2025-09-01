@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Новая запись</h1>
+<form method="post">
+<textarea name="text" rows="3" cols="40"></textarea><br/>
+<select name="dialog">
+<option value="static">static</option>
+<option value="rules">rules</option>
+<option value="sentiment">sentiment</option>
+</select>
+<select name="style">
+<option value="gentle">gentle</option>
+<option value="skeptic">skeptic</option>
+<option value="poet">poet</option>
+</select>
+<button type="submit">Записать</button>
+</form>
+{% if reply %}
+<pre class="reply">{{ reply }}</pre>
+{% endif %}
+<h2>Последние записи</h2>
+<ul>
+{% for e in entries %}
+<li><a href="/entries/{{e.id}}">{{e.ts_utc}}</a> – {{", ".join(e.threads)}} ({{e.sentiment}})</li>
+{% endfor %}
+</ul>
+{% endblock %}

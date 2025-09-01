@@ -1,26 +1,24 @@
-# Smart Diary Ally
+# Разговорный дневник
 
-Минимальный CLI/библиотека для ведения «умного дневника-союзника».
+Локальный CLI и веб‑приложение для ведения небольших дневниковых записей с автоматическим отражением и вопросом.
 
-## Установка и запуск
-
+## Примеры
 ```bash
-python -m ally.cli --help
+ally init
+ally write "Сегодня я переживаю из-за дедлайна" --dialog=sentiment
+ally write "Классно поработал над проектом, есть прогресс" --dialog=rules
+ally list --limit 5
+ally pulse
+ally export --fmt html --out journal.html
+ALLY_DATA_PATH=./mydata ally web
 ```
 
-## Основные команды
-
-- `init` – инициализация хранилища.
-- `write "текст"` – добавить запись и получить ответ.
-- `list` – показать последние записи.
-- `threads` – показать нити и их счётчики.
-- `pulse` – агрегированные top-terms в JSON.
-- `export --fmt md|json --out PATH` – экспорт архива.
-
-Используется файловое хранилище в виде Markdown/JSON; бинарные файлы не создаются.
-
-## Тесты
-
+## Установка
 ```bash
-python -m pytest
+pip install -e .
+```
+
+## Запуск тестов
+```bash
+pytest
 ```

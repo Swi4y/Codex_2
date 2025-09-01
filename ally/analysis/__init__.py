@@ -1,2 +1,3 @@
-"""Text analysis utilities."""
-from .core import tokenize, top_terms
+from .core import analyze_sentiment, tokenize, top_terms
+
+__all__ = ["tokenize", "top_terms", "analyze_sentiment"]
