@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Pulse</h1>
+<h2>Themes</h2>
+<ul>
+{% for k,v in data.themes.items() %}<li>{{k}}: {{v}}</li>{% endfor %}
+</ul>
+<h2>By day</h2>
+<ul>
+{% for k,v in data.days.items() %}<li>{{k}}: {{v}}</li>{% endfor %}
+</ul>
+<h2>Sentiment</h2>
+<ul>
+{% for k,v in data.sentiments.items() %}<li>{{k}}: {{v}}</li>{% endfor %}
+</ul>
+<canvas id="chart" width="300" height="150"></canvas>
+<script>
+const ctx=document.getElementById('chart').getContext('2d');
+const data={{ data.sentiments|tojson }};
+const keys=Object.keys(data); const values=Object.values(data);
+const max=Math.max(...values,1);
+keys.forEach((k,i)=>{ctx.fillStyle='#6699cc';ctx.fillRect(i*60,150-(values[i]/max)*150,40,(values[i]/max)*150);ctx.fillStyle='#000';ctx.fillText(k,i*60,145);});
+</script>
+{% endblock %}

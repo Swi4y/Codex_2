@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ meta.ts_utc }}</h1>
+<p>{{ meta.sentiment }} – {{ ", ".join(meta.threads) }}</p>
+<div class="entry">{{ text | safe }}</div>
+{% endblock %}

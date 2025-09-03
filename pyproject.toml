@@ -1,0 +1,32 @@
+[project]
+name = "ally"
+version = "0.1.0"
+description = "Разговорный дневник"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Codex"}]
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "click",
+  "rich",
+  "jinja2",
+  "python-multipart",
+]
+
+[project.scripts]
+ally = "ally.cli:cli"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+
+[tool.mypy]
+config_file = "mypy.ini"
+
+[tool.ruff]
+config = "ruff.toml"
